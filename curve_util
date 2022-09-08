@@ -1,0 +1,57 @@
+def get_curve_data(curveObj):	
+	cmds.delete(curveObj, ch=True)
+	degree = cmds.getAttr(curveObj + ".degree")	
+	span = cmds.getAttr(curveObj + ".spans")
+	form = cmds.getAttr(curveObj + ".form")
+	cv_count = degree + span
+	knot_count = cv_count + degree -1
+	
+	cv_list = []
+	
+	cvs = cmds.ls("{}.cv[*]".format(selection), l=True)[0]
+	cv_list = cmds.getAttr(cvs)
+		
+	data = []
+	data.append(degree)
+	data.append(span)
+	data.append(form)
+	data.append(cv_count)
+	data.append(knot_count)
+	data.append(cv_list)
+	return(data)
+
+selection=cmds.ls(sl=True, l=True)[0]
+round = get_curve_data(selection)
+print(round)
+
+#--------------------------------------------------------------------------------
+
+def build_curve(data):
+	degree = data[0]
+	span = data[1]
+	form = data[2]
+	cv_count = data[3]
+	knot_count = data[4]
+	cv_list = data[5]
+	
+	cv_knots = []
+	
+	if form == 0:
+		if degree == 1: # curve is linear
+			for i in range (0, knot_count):
+				cv_knots.append(i)
+		else:
+			knot_iter = 0
+			for i in range(0, knot_count):
+				if i >= 3 and i <= knot_count-3:
+					knot_iter += 1
+				cv_knots.append(knot_iter)
+
+	elif form == 2:
+		for i in range(3):
+			cv_list.append(cv_list[i])  # appends the first 3 CV coordinates to the end of cv_list
+			
+		for i in range(knot_count):
+			cv_knots.append(i-2)  # Shifts down the list down by 2
+			
+	cmds.curve(per=form, d=degree, p=cv_list, k=cv_knots)
