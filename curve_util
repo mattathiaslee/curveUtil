@@ -33,9 +33,8 @@ def get_curve_data(curve_obj):
 #--------------------------------------------------------------------------------
 ###BUILD CURVE###
 #--------------------------------------------------------------------------------
-import maya.cmds as cmds
-
-def build_curve(data, name=None):
+def build_curve(data, name=None, align=""):
+	align = cmds.ls(sl=True)
 	if name == None:
 		name = "curve"
 	grp = cmds.group(em=True, n=name + "_CTRL")
@@ -78,3 +77,8 @@ def build_curve(data, name=None):
 		cmds.delete(i)
 	nul = cmds.group(em=True, n=name + "_NUL")
 	cmds.parent(grp, nul)
+	if align==True:
+		cmds.matchTransform(nul, align)
+	else:
+		pass
+	cmds.select(nul)
