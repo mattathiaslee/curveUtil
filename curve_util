@@ -54,8 +54,9 @@ def get_curve_data(curve_obj):
 #--------------------------------------------------------------------------------
 ###BUILD CURVE###
 #--------------------------------------------------------------------------------
-def build_curve(data, name=None, align=""):
+def build_curve(data, name=None, add_nul=True):
 	align = cmds.ls(sl=True)
+	print align
 	if name == None:
 		name = "curve"
 	grp = cmds.group(em=True, n=name + "_CTRL")
@@ -91,15 +92,15 @@ def build_curve(data, name=None, align=""):
 				cv_knots.append(i-2)  # Shifts down the list down by 2
 				
 		shapes.append(cmds.curve(per=form, d=degree, p=cv_list, k=cv_knots))
-
-	for i in shapes:
-		shape = cmds.listRelatives(i, shapes=True)[0]
-		cmds.parent(shape, grp, r=True, s=True)
-		cmds.delete(i)
-	nul = cmds.group(em=True, n=name + "_NUL")
-	cmds.parent(grp, nul)
-	if align==True:
+	
+	if add_nul == True:
+		for i in shapes:
+			shape = cmds.listRelatives(i, shapes=True)[0]
+			cmds.parent(shape, grp, r=True, s=True)
+			cmds.delete(i)
+		nul = cmds.group(em=True, n=name + "_NUL")
+		cmds.parent(grp, nul)
+		print nul
+	if len(align) != 0:
 		cmds.matchTransform(nul, align)
-	else:
-		pass
 	cmds.select(nul)
