@@ -55,8 +55,7 @@ def get_curve_data(curve_obj):
 ###BUILD CURVE###
 #--------------------------------------------------------------------------------
 def build_curve(data, name=None, add_nul=True):
-	align = cmds.ls(sl=True)
-	print align
+	align = cmds.ls(sl=True)[0]
 	if name == None:
 		name = "curve"
 	grp = cmds.group(em=True, n=name + "_CTRL")
@@ -100,7 +99,6 @@ def build_curve(data, name=None, add_nul=True):
 			cmds.delete(i)
 		nul = cmds.group(em=True, n=name + "_NUL")
 		cmds.parent(grp, nul)
-		print nul
 	if len(align) != 0:
 		cmds.matchTransform(nul, align)
 	cmds.select(nul)
