@@ -1,57 +1,80 @@
-def get_curve_data(curveObj):	
-	cmds.delete(curveObj, ch=True)
-	degree = cmds.getAttr(curveObj + ".degree")	
-	span = cmds.getAttr(curveObj + ".spans")
-	form = cmds.getAttr(curveObj + ".form")
-	cv_count = degree + span
-	knot_count = cv_count + degree -1
-	
-	cv_list = []
-	
-	cvs = cmds.ls("{}.cv[*]".format(selection), l=True)[0]
-	cv_list = cmds.getAttr(cvs)
-		
-	data = []
-	data.append(degree)
-	data.append(span)
-	data.append(form)
-	data.append(cv_count)
-	data.append(knot_count)
-	data.append(cv_list)
-	return(data)
+#--------------------------------------------------------------------------------
+###GET CURVE DATA###
+#--------------------------------------------------------------------------------
+import maya.cmds as cmds
 
-selection=cmds.ls(sl=True, l=True)[0]
-round = get_curve_data(selection)
-print(round)
+def get_curve_data(curve_obj):
+	cmds.delete(curve_obj, ch=True)  # Enable Cvs to "bake" 
+	curve_shapes = cmds.listRelatives(curve_obj, shapes=True, type="nurbsCurve", f=True)
+
+	data = []
+	
+	for shape in curve_shapes:
+		degree = cmds.getAttr(shape + ".degree")	
+		spans = cmds.getAttr(shape + ".spans")
+		form = cmds.getAttr(shape + ".form")
+		cv_count = degree + spans
+		knot_count = cv_count + degree -1
+		
+		cv_list = []
+		cvs = cmds.ls("{}.cv[*]".format(shape), l=True)[0]
+		cv_list = cmds.getAttr(cvs)
+		
+		shape_data = []
+		shape_data.append(degree)
+		shape_data.append(spans)
+		shape_data.append(form)
+		shape_data.append(knot_count)
+		shape_data.append(cv_list)
+		data.append(shape_data)
+	
+	return data
 
 #--------------------------------------------------------------------------------
+###BUILD CURVE###
+#--------------------------------------------------------------------------------
+import maya.cmds as cmds
 
-def build_curve(data):
-	degree = data[0]
-	span = data[1]
-	form = data[2]
-	cv_count = data[3]
-	knot_count = data[4]
-	cv_list = data[5]
+def build_curve(data, name=None):
+	if name == None:
+		name = "curve"
+	grp = cmds.group(em=True, n=name + "_CTRL")
 	
-	cv_knots = []
+	curves = []
+	shapes = []
 	
-	if form == 0:
-		if degree == 1: # curve is linear
-			for i in range (0, knot_count):
-				cv_knots.append(i)
-		else:
-			knot_iter = 0
-			for i in range(0, knot_count):
-				if i >= 3 and i <= knot_count-3:
-					knot_iter += 1
-				cv_knots.append(knot_iter)
+	for shape_data in data:
+		degree = shape_data[0]
+		spans = shape_data[1]
+		form = shape_data[2]
+		knot_count = shape_data[3]
+		cv_list = [[pos[0], pos[1], pos[2]] for pos in shape_data[4]] # Creates a new generated list otherwise ```cv_list.append(cv_list[i])``` will change it
+		
+		cv_knots = []
+		
+		if form == 0:  # curve is open
+			if degree == 1: #  curve is linear
+				for i in range (0, knot_count):
+					cv_knots.append(i)
+			else:  # curve is cubic
+				knot_iter = 0
+				for i in range(0, knot_count):
+					if i >= 3 and i <= knot_count-3:
+						knot_iter += 1
+					cv_knots.append(knot_iter)
+		
+		elif form == 2:  # Periodic Curve
+			for i in range(3):
+				cv_list.append(cv_list[i])  # appends the first 3 CV coordinates to the end of cv_list
+				
+			for i in range(knot_count):
+				cv_knots.append(i-2)  # Shifts down the list down by 2
+				
+		shapes.append(cmds.curve(per=form, d=degree, p=cv_list, k=cv_knots))
 
-	elif form == 2:
-		for i in range(3):
-			cv_list.append(cv_list[i])  # appends the first 3 CV coordinates to the end of cv_list
-			
-		for i in range(knot_count):
-			cv_knots.append(i-2)  # Shifts down the list down by 2
-			
-	cmds.curve(per=form, d=degree, p=cv_list, k=cv_knots)
+	for i in shapes:
+		shape = cmds.listRelatives(i, shapes=True)[0]
+		cmds.parent(shape, grp, r=True, s=True)
+		cmds.delete(i)
+	nul = cmds.group(em=True, n=name + "_NUL")
+	cmds.parent(grp, nul)
