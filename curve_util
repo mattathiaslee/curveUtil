@@ -1,4 +1,24 @@
 #--------------------------------------------------------------------------------
+###COMBINE CURVES###
+#--------------------------------------------------------------------------------
+import maya.cmds as cmds
+
+selection = cmds.ls(sl=True)
+
+def combine_curves(curves):
+	grp = cmds.group(em=True, n="combined_NUL")
+	for i in curves:
+		print i
+		cmds.makeIdentity(apply=True, t=True, r=True, s=True)
+		shapes = cmds.listRelatives(i, shapes=True)[0]
+		print shapes
+		cmds.parent(shapes, grp, r=True, s=True)
+		cmds.delete(i)
+	cmds.select(d=True)
+	
+combine_curves(selection)
+
+#--------------------------------------------------------------------------------
 ###GET CURVE DATA###
 #--------------------------------------------------------------------------------
 import maya.cmds as cmds
@@ -29,6 +49,7 @@ def get_curve_data(curve_obj):
 		data.append(shape_data)
 	
 	return data
+
 
 #--------------------------------------------------------------------------------
 ###BUILD CURVE###
